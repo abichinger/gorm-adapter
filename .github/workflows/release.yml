@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    branches: [master]
+    types: 
+      - completed
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+
+      - name: Install semantic-release
+        run: yarn install
+
+      - name: Run semantic-release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: yarn semantic-release
+
+
+      
