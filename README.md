@@ -5,7 +5,7 @@ Gorm Adapter
 [![Godoc](https://godoc.org/github.com/abichinger/gorm-adapter?status.svg)](https://godoc.org/github.com/abichinger/gorm-adapter)
 [![Release](https://img.shields.io/github/release/abichinger/gorm-adapter.svg)](https://github.com/abichinger/gorm-adapter/releases/latest)
 
-Gorm Adapter is the [Gorm](https://gorm.io/gorm) adapter for [FastAC](https://github.com/abichinger/fastac). With this library, Casbin can load policy from Gorm supported database or save policy to it.
+Gorm Adapter is the [Gorm](https://gorm.io/gorm) adapter for [FastAC](https://github.com/abichinger/fastac). With this library, FastAC can load policy from Gorm supported database or save policy to it.
 
 Based on [Officially Supported Databases](https://v1.gorm.io/docs/connecting_to_the_database.html#Supported-Databases), The current supported databases are:
 
@@ -33,7 +33,7 @@ import (
 )
 
 func main() {
-	// Initialize a Gorm adapter and use it in a Casbin enforcer:
+	// Initialize a Gorm adapter and use it in a FastAC enforcer:
 	// The adapter will use "fastac_rules" as the default table name.
 	// If it doesn't exist, the adapter will create the table automatically.
 	dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"

@@ -15,7 +15,6 @@
 package gormadapter
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -192,64 +191,9 @@ func (a *Adapter) LoadPolicy(model api.IAddRuleBool) error {
 	return nil
 }
 
-// LoadFilteredPolicy loads only policy rules that match the filter.
-func (a *Adapter) LoadFilteredPolicy(model api.IAddRuleBool, filter interface{}) error {
-	var lines []CasbinRule
-
-	filterValue, ok := filter.(Filter)
-	if !ok {
-		return errors.New("invalid filter type")
-	}
-
-	if err := a.db.Scopes(a.filterQuery(a.db, filterValue)).Order("ID").Find(&lines).Error; err != nil {
-		return err
-	}
-
-	for _, line := range lines {
-		loadPolicyLine(line, model)
-	}
-	a.isFiltered = true
-
-	return nil
-}
-
 // IsFiltered returns true if the loaded policy has been filtered.
 func (a *Adapter) IsFiltered() bool {
 	return a.isFiltered
-}
-
-// filterQuery builds the gorm query to match the rule filter to use within a scope.
-func (a *Adapter) filterQuery(db *gorm.DB, filter Filter) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if len(filter.Ptype) > 0 {
-			db = db.Where("ptype in (?)", filter.Ptype)
-		}
-		if len(filter.V0) > 0 {
-			db = db.Where("v0 in (?)", filter.V0)
-		}
-		if len(filter.V1) > 0 {
-			db = db.Where("v1 in (?)", filter.V1)
-		}
-		if len(filter.V2) > 0 {
-			db = db.Where("v2 in (?)", filter.V2)
-		}
-		if len(filter.V3) > 0 {
-			db = db.Where("v3 in (?)", filter.V3)
-		}
-		if len(filter.V4) > 0 {
-			db = db.Where("v4 in (?)", filter.V4)
-		}
-		if len(filter.V5) > 0 {
-			db = db.Where("v5 in (?)", filter.V5)
-		}
-		if len(filter.V6) > 0 {
-			db = db.Where("v6 in (?)", filter.V6)
-		}
-		if len(filter.V7) > 0 {
-			db = db.Where("v7 in (?)", filter.V7)
-		}
-		return db
-	}
 }
 
 func (a *Adapter) savePolicyLine(ptype string, rule []string) CasbinRule {
@@ -356,59 +300,6 @@ func (a *Adapter) RemoveRules(rules [][]string) error {
 	})
 }
 
-// RemoveFilteredPolicy removes policy rules that match the filter from the storage.
-func (a *Adapter) RemoveFilteredPolicy(sec string, ptype string, fieldIndex int, fieldValues ...string) error {
-	line := a.getTableInstance()
-
-	line.Ptype = ptype
-
-	if fieldIndex == -1 {
-		return a.rawDelete(a.db, *line)
-	}
-
-	err := checkQueryField(fieldValues)
-	if err != nil {
-		return err
-	}
-
-	if fieldIndex <= 0 && 0 < fieldIndex+len(fieldValues) {
-		line.V0 = fieldValues[0-fieldIndex]
-	}
-	if fieldIndex <= 1 && 1 < fieldIndex+len(fieldValues) {
-		line.V1 = fieldValues[1-fieldIndex]
-	}
-	if fieldIndex <= 2 && 2 < fieldIndex+len(fieldValues) {
-		line.V2 = fieldValues[2-fieldIndex]
-	}
-	if fieldIndex <= 3 && 3 < fieldIndex+len(fieldValues) {
-		line.V3 = fieldValues[3-fieldIndex]
-	}
-	if fieldIndex <= 4 && 4 < fieldIndex+len(fieldValues) {
-		line.V4 = fieldValues[4-fieldIndex]
-	}
-	if fieldIndex <= 5 && 5 < fieldIndex+len(fieldValues) {
-		line.V5 = fieldValues[5-fieldIndex]
-	}
-	if fieldIndex <= 6 && 6 < fieldIndex+len(fieldValues) {
-		line.V6 = fieldValues[6-fieldIndex]
-	}
-	if fieldIndex <= 7 && 7 < fieldIndex+len(fieldValues) {
-		line.V7 = fieldValues[7-fieldIndex]
-	}
-	err = a.rawDelete(a.db, *line)
-	return err
-}
-
-// checkQueryfield make sure the fields won't all be empty (string --> "")
-func checkQueryField(fieldValues []string) error {
-	for _, fieldValue := range fieldValues {
-		if fieldValue != "" {
-			return nil
-		}
-	}
-	return errors.New("the query field cannot all be empty string (\"\"), please check")
-}
-
 func (a *Adapter) rawDelete(db *gorm.DB, line CasbinRule) error {
 	queryArgs := []interface{}{line.Ptype}
 
@@ -448,174 +339,6 @@ func (a *Adapter) rawDelete(db *gorm.DB, line CasbinRule) error {
 	args := append([]interface{}{queryStr}, queryArgs...)
 	err := db.Delete(a.getTableInstance(), args...).Error
 	return err
-}
-
-func appendWhere(line CasbinRule) (string, []interface{}) {
-	queryArgs := []interface{}{line.Ptype}
-
-	queryStr := "ptype = ?"
-	if line.V0 != "" {
-		queryStr += " and v0 = ?"
-		queryArgs = append(queryArgs, line.V0)
-	}
-	if line.V1 != "" {
-		queryStr += " and v1 = ?"
-		queryArgs = append(queryArgs, line.V1)
-	}
-	if line.V2 != "" {
-		queryStr += " and v2 = ?"
-		queryArgs = append(queryArgs, line.V2)
-	}
-	if line.V3 != "" {
-		queryStr += " and v3 = ?"
-		queryArgs = append(queryArgs, line.V3)
-	}
-	if line.V4 != "" {
-		queryStr += " and v4 = ?"
-		queryArgs = append(queryArgs, line.V4)
-	}
-	if line.V5 != "" {
-		queryStr += " and v5 = ?"
-		queryArgs = append(queryArgs, line.V5)
-	}
-	if line.V6 != "" {
-		queryStr += " and v6 = ?"
-		queryArgs = append(queryArgs, line.V6)
-	}
-	if line.V7 != "" {
-		queryStr += " and v7 = ?"
-		queryArgs = append(queryArgs, line.V7)
-	}
-	return queryStr, queryArgs
-}
-
-// UpdatePolicy updates a new policy rule to DB.
-func (a *Adapter) UpdatePolicy(sec string, ptype string, oldRule, newPolicy []string) error {
-	oldLine := a.savePolicyLine(ptype, oldRule)
-	newLine := a.savePolicyLine(ptype, newPolicy)
-	return a.db.Model(&oldLine).Where(&oldLine).Updates(newLine).Error
-}
-
-func (a *Adapter) UpdatePolicies(sec string, ptype string, oldRules, newRules [][]string) error {
-	oldPolicies := make([]CasbinRule, 0, len(oldRules))
-	newPolicies := make([]CasbinRule, 0, len(oldRules))
-	for _, oldRule := range oldRules {
-		oldPolicies = append(oldPolicies, a.savePolicyLine(ptype, oldRule))
-	}
-	for _, newRule := range newRules {
-		newPolicies = append(newPolicies, a.savePolicyLine(ptype, newRule))
-	}
-	tx := a.db.Begin()
-	for i := range oldPolicies {
-		if err := tx.Model(&oldPolicies[i]).Where(&oldPolicies[i]).Updates(newPolicies[i]).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit().Error
-}
-
-func (a *Adapter) UpdateFilteredPolicies(sec string, ptype string, newPolicies [][]string, fieldIndex int, fieldValues ...string) ([][]string, error) {
-	// UpdateFilteredPolicies deletes old rules and adds new rules.
-	line := a.getTableInstance()
-
-	line.Ptype = ptype
-	if fieldIndex <= 0 && 0 < fieldIndex+len(fieldValues) {
-		line.V0 = fieldValues[0-fieldIndex]
-	}
-	if fieldIndex <= 1 && 1 < fieldIndex+len(fieldValues) {
-		line.V1 = fieldValues[1-fieldIndex]
-	}
-	if fieldIndex <= 2 && 2 < fieldIndex+len(fieldValues) {
-		line.V2 = fieldValues[2-fieldIndex]
-	}
-	if fieldIndex <= 3 && 3 < fieldIndex+len(fieldValues) {
-		line.V3 = fieldValues[3-fieldIndex]
-	}
-	if fieldIndex <= 4 && 4 < fieldIndex+len(fieldValues) {
-		line.V4 = fieldValues[4-fieldIndex]
-	}
-	if fieldIndex <= 5 && 5 < fieldIndex+len(fieldValues) {
-		line.V5 = fieldValues[5-fieldIndex]
-	}
-	if fieldIndex <= 6 && 6 < fieldIndex+len(fieldValues) {
-		line.V6 = fieldValues[6-fieldIndex]
-	}
-	if fieldIndex <= 7 && 7 < fieldIndex+len(fieldValues) {
-		line.V7 = fieldValues[7-fieldIndex]
-	}
-
-	newP := make([]CasbinRule, 0, len(newPolicies))
-	oldP := make([]CasbinRule, 0)
-	for _, newRule := range newPolicies {
-		newP = append(newP, a.savePolicyLine(ptype, newRule))
-	}
-
-	tx := a.db.Begin()
-
-	for i := range newP {
-		str, args := line.queryString()
-		if err := tx.Where(str, args...).Find(&oldP).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-		if err := tx.Where(str, args...).Delete([]CasbinRule{}).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-		if err := tx.Create(&newP[i]).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-	}
-
-	// return deleted rulues
-	oldPolicies := make([][]string, 0)
-	for _, v := range oldP {
-		oldPolicy := v.toStringPolicy()
-		oldPolicies = append(oldPolicies, oldPolicy)
-	}
-	return oldPolicies, tx.Commit().Error
-}
-
-func (c *CasbinRule) queryString() (interface{}, []interface{}) {
-	queryArgs := []interface{}{c.Ptype}
-
-	queryStr := "ptype = ?"
-	if c.V0 != "" {
-		queryStr += " and v0 = ?"
-		queryArgs = append(queryArgs, c.V0)
-	}
-	if c.V1 != "" {
-		queryStr += " and v1 = ?"
-		queryArgs = append(queryArgs, c.V1)
-	}
-	if c.V2 != "" {
-		queryStr += " and v2 = ?"
-		queryArgs = append(queryArgs, c.V2)
-	}
-	if c.V3 != "" {
-		queryStr += " and v3 = ?"
-		queryArgs = append(queryArgs, c.V3)
-	}
-	if c.V4 != "" {
-		queryStr += " and v4 = ?"
-		queryArgs = append(queryArgs, c.V4)
-	}
-	if c.V5 != "" {
-		queryStr += " and v5 = ?"
-		queryArgs = append(queryArgs, c.V5)
-	}
-	if c.V6 != "" {
-		queryStr += " and v6 = ?"
-		queryArgs = append(queryArgs, c.V6)
-	}
-	if c.V7 != "" {
-		queryStr += " and v7 = ?"
-		queryArgs = append(queryArgs, c.V7)
-	}
-
-	return queryStr, queryArgs
 }
 
 func (c *CasbinRule) toStringPolicy() []string {
