@@ -18,7 +18,7 @@ You may find other 3rd-party supported DBs in Gorm website or other places.
 
 ## Installation
 
-    go get github.com/abichinger/gorm-adapter/v3
+    go get github.com/abichinger/gorm-adapter
 
 ## Simple Example
 
